@@ -1,0 +1,26 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+
+before_install:
+  - docker build -t maniecodes/multi-docker -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true maniecodes/multi-docker npm run test -- --coverage --watchAll=false
+
+after_success: 
+  - docker build -t maniecodes/multi-client ./client
+  - docker build -t maniecodes/multi-nginx ./nginx
+  - docker build -t maniecodes/multi-server ./server
+  - docker build -t maniecodes/multi-worker ./worker
+
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "DOCKER_ID" --password-stdin
+
+  # Take those images and push them to docker hub
+  - docker push maniecodes/multi-client
+  - docker push maniecodes/multi-nginx
+  - docker push maniecodes/multi-server
+  - docker push maniecodes/multi-worker
